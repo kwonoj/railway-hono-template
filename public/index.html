@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="origin-trial" content="ApUqBGz0zGOYTRQD37/FMYHmTUemOv7wEGDjxFEJVPF9wijLe8eCB3WYhAdUsDYtqjubPn/1spil9Rl5PqP2bQAAAABheyJvcmlnaW4iOiJodHRwczovL3BhcGVyd2VpZ2h0LnBhZ2U6NDQzIiwiZmVhdHVyZSI6IkRvY3VtZW50SXNvbGF0aW9uUG9saWN5IiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ==">
+    <title>Hello World</title>
+</head>
+<body>
+    <h1>Hello World</h1>
+    <div id="results"></div>
+
+    <script>
+        // Check and log crossOriginIsolated status
+        console.log('crossOriginIsolated:', window.crossOriginIsolated);
+
+        // Check if performance.measureUserAgentSpecificMemory is available
+        if (performance.measureUserAgentSpecificMemory) {
+            console.log('measureUserAgentSpecificMemory is available');
+
+            // Run the memory measurement and log the result
+            performance.measureUserAgentSpecificMemory()
+                .then(result => {
+                    console.log('Memory measurement result:', result);
+
+                    // Display results on the page
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = `
+                        <h2>Results:</h2>
+                        <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
+                        <p>measureUserAgentSpecificMemory available: true</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error measuring memory:', error);
+
+                    // Display error on the page
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = `
+                        <h2>Results:</h2>
+                        <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
+                        <p>measureUserAgentSpecificMemory available: true</p>
+                        <p>Error: ${error.message}</p>
+                    `;
+                });
+        } else {
+            console.log('measureUserAgentSpecificMemory is NOT available');
+
+            // Display results on the page when the API is not available
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h2>Results:</h2>
+                <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
+                <p>measureUserAgentSpecificMemory available: false</p>
+            `;
+        }
+    </script>
+</body>
+</html>
