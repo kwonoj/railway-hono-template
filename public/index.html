@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="origin-trial" content="ApUqBGz0zGOYTRQD37/FMYHmTUemOv7wEGDjxFEJVPF9wijLe8eCB3WYhAdUsDYtqjubPn/1spil9Rl5PqP2bQAAAABheyJvcmlnaW4iOiJodHRwczovL3BhcGVyd2VpZ2h0LnBhZ2U6NDQzIiwiZmVhdHVyZSI6IkRvY3VtZW50SXNvbGF0aW9uUG9saWN5IiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ==">
     <title>Document Isolation Policy Violation Demo</title>
+    <script src="https://example.com/script.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,7 +62,6 @@
     <div class="section">
         <h2>Current Isolation Status</h2>
         <div id="isolation-status"></div>
-        <p><a href="/violation-demo.html" style="display: inline-block; margin-top: 15px; padding: 8px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Advanced Violation Demo</a></p>
     </div>
 
     <div class="section">
@@ -71,7 +71,22 @@
             <iframe id="cross-origin-iframe" src="https://example.com" title="Cross-origin iframe"></iframe>
             <button id="access-iframe-btn">Try to Access Iframe Content</button>
             <div id="iframe-result" class="result">Result will appear here</div>
+            <script>
+                fetch('https://picsum.photos/100')
+                    .then(response => {
+                        const img = document.createElement('img');
+                        img.src = response.url;
+                        document.querySelector('.violation-test').appendChild(img);
+                    });
+            </script>
         </div>
+
+        <!--<iframe src="child.html"></iframe>-->
+        <script>
+        const iframe = document.querySelector('iframe');
+        // This will fail if child.html has DIP enabled
+        iframe.contentWindow.document.body.innerHTML = "Injected!";
+        </script>
     </div>
 
     <div class="section">
@@ -189,6 +204,18 @@
                 </div>
             `;
         }
+
+        const o = new ReportingObserver((reports, observer) => {
+            for (const report of reports) {
+                console.log('report', report);
+                if (report.body) {
+                    console.log(report.body.toJSON());
+                    observer.disconnect();
+                }
+            }
+        }, {buffered: true});
+
+        o.observe();
     </script>
 </body>
 </html>
