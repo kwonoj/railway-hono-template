@@ -4,17 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="origin-trial" content="ApUqBGz0zGOYTRQD37/FMYHmTUemOv7wEGDjxFEJVPF9wijLe8eCB3WYhAdUsDYtqjubPn/1spil9Rl5PqP2bQAAAABheyJvcmlnaW4iOiJodHRwczovL3BhcGVyd2VpZ2h0LnBhZ2U6NDQzIiwiZmVhdHVyZSI6IkRvY3VtZW50SXNvbGF0aW9uUG9saWN5IiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ==">
-    <title>Hello World</title>
+    <title>Document Isolation Policy Violation Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .violation-test {
+            background-color: #f8f8f8;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #ff9800;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 3px;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        iframe {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ddd;
+        }
+        pre {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello World</h1>
+    <h1>Document Isolation Policy Violation Demo</h1>
+    <div class="section">
+        <h2>Current Isolation Status</h2>
+        <div id="isolation-status"></div>
+        <p><a href="/violation-demo.html" style="display: inline-block; margin-top: 15px; padding: 8px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Advanced Violation Demo</a></p>
+    </div>
+
+    <div class="section">
+        <h2>Cross-Origin Iframe Access Test</h2>
+        <p>This test attempts to access content from a cross-origin iframe, which should be blocked by Document Isolation Policy.</p>
+        <div class="violation-test">
+            <iframe id="cross-origin-iframe" src="https://example.com" title="Cross-origin iframe"></iframe>
+            <button id="access-iframe-btn">Try to Access Iframe Content</button>
+            <div id="iframe-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Document Domain Modification Test</h2>
+        <p>This test attempts to modify document.domain, which is restricted under Document Isolation Policy.</p>
+        <div class="violation-test">
+            <button id="modify-domain-btn">Try to Modify document.domain</button>
+            <div id="domain-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Shared Array Buffer Test</h2>
+        <p>This test attempts to create and share a SharedArrayBuffer, which requires cross-origin isolation.</p>
+        <div class="violation-test">
+            <button id="shared-array-btn">Try to Create SharedArrayBuffer</button>
+            <div id="shared-array-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
     <div id="results"></div>
 
     <script>
-        // Check and log crossOriginIsolated status
-        console.log('crossOriginIsolated:', window.crossOriginIsolated);
+        // Display isolation status
+        function updateIsolationStatus() {
+            const statusDiv = document.getElementById('isolation-status');
+            statusDiv.innerHTML = `
+                <p><strong>crossOriginIsolated:</strong> ${window.crossOriginIsolated}</p>
+                <p><strong>measureUserAgentSpecificMemory available:</strong> ${!!performance.measureUserAgentSpecificMemory}</p>
+            `;
+            console.log('crossOriginIsolated:', window.crossOriginIsolated);
+        }
+        updateIsolationStatus();
 
-        // Check if performance.measureUserAgentSpecificMemory is available
+        // Test 1: Try to access cross-origin iframe content
+        document.getElementById('access-iframe-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('iframe-result');
+            try {
+                const iframe = document.getElementById('cross-origin-iframe');
+                // This should trigger a violation
+                const iframeContent = iframe.contentWindow.document.body.innerHTML;
+                resultDiv.innerHTML = `<p>Successfully accessed iframe content (this should not happen under Document Isolation Policy):</p><pre>${iframeContent}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error (expected with Document Isolation Policy):</p><pre>${error.toString()}</pre>`;
+                console.error('Iframe access error:', error);
+            }
+        });
+
+        // Test 2: Try to modify document.domain
+        document.getElementById('modify-domain-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('domain-result');
+            try {
+                // This should trigger a violation under Document Isolation Policy
+                const currentDomain = document.domain;
+                document.domain = currentDomain;
+                resultDiv.innerHTML = `<p>Successfully modified document.domain (this should not happen under strict Document Isolation Policy)</p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error (expected with Document Isolation Policy):</p><pre>${error.toString()}</pre>`;
+                console.error('Document domain modification error:', error);
+            }
+        });
+
+        // Test 3: Try to create a SharedArrayBuffer
+        document.getElementById('shared-array-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('shared-array-result');
+            try {
+                // This requires cross-origin isolation to work
+                const sharedBuffer = new SharedArrayBuffer(1024);
+                resultDiv.innerHTML = `<p>Successfully created SharedArrayBuffer (requires cross-origin isolation):</p><pre>Size: ${sharedBuffer.byteLength} bytes</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error (expected if not cross-origin isolated):</p><pre>${error.toString()}</pre>`;
+                console.error('SharedArrayBuffer error:', error);
+            }
+        });
+
+        // Original memory measurement code
         if (performance.measureUserAgentSpecificMemory) {
             console.log('measureUserAgentSpecificMemory is available');
 
@@ -26,10 +159,10 @@
                     // Display results on the page
                     const resultsDiv = document.getElementById('results');
                     resultsDiv.innerHTML = `
-                        <h2>Results:</h2>
-                        <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
-                        <p>measureUserAgentSpecificMemory available: true</p>
-                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                        <div class="section">
+                            <h2>Memory Measurement Results:</h2>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
                     `;
                 })
                 .catch(error => {
@@ -38,10 +171,10 @@
                     // Display error on the page
                     const resultsDiv = document.getElementById('results');
                     resultsDiv.innerHTML = `
-                        <h2>Results:</h2>
-                        <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
-                        <p>measureUserAgentSpecificMemory available: true</p>
-                        <p>Error: ${error.message}</p>
+                        <div class="section">
+                            <h2>Memory Measurement Error:</h2>
+                            <p>${error.message}</p>
+                        </div>
                     `;
                 });
         } else {
@@ -50,9 +183,10 @@
             // Display results on the page when the API is not available
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = `
-                <h2>Results:</h2>
-                <p>crossOriginIsolated: ${window.crossOriginIsolated}</p>
-                <p>measureUserAgentSpecificMemory available: false</p>
+                <div class="section">
+                    <h2>Memory Measurement:</h2>
+                    <p>measureUserAgentSpecificMemory API is not available</p>
+                </div>
             `;
         }
     </script>

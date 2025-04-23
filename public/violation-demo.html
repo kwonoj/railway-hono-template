@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="origin-trial" content="ApUqBGz0zGOYTRQD37/FMYHmTUemOv7wEGDjxFEJVPF9wijLe8eCB3WYhAdUsDYtqjubPn/1spil9Rl5PqP2bQAAAABheyJvcmlnaW4iOiJodHRwczovL3BhcGVyd2VpZ2h0LnBhZ2U6NDQzIiwiZmVhdHVyZSI6IkRvY3VtZW50SXNvbGF0aW9uUG9saWN5IiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ==">
+    <title>Advanced Document Isolation Policy Violation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .violation-test {
+            background-color: #f8f8f8;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #ff9800;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 3px;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Advanced Document Isolation Policy Violation Demo</h1>
+    
+    <div class="section">
+        <h2>Current Isolation Status</h2>
+        <div id="isolation-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>Cross-Origin Resource Fetch Test</h2>
+        <p>This test attempts to fetch a resource from a different origin without CORS headers, which should be blocked by Document Isolation Policy.</p>
+        <div class="violation-test">
+            <button id="fetch-resource-btn">Fetch Cross-Origin Resource</button>
+            <div id="fetch-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Cross-Origin Embedding Test</h2>
+        <p>This test attempts to embed content from another origin in various ways that may violate Document Isolation Policy.</p>
+        <div class="violation-test">
+            <h3>1. Script from External Domain</h3>
+            <button id="load-script-btn">Load External Script</button>
+            <div id="script-result" class="result">Result will appear here</div>
+            
+            <h3>2. Iframe with document.write</h3>
+            <button id="iframe-write-btn">Create Iframe with document.write</button>
+            <div id="iframe-container"></div>
+            <div id="iframe-write-result" class="result">Result will appear here</div>
+            
+            <h3>3. Dynamic Import from External Domain</h3>
+            <button id="dynamic-import-btn">Try Dynamic Import</button>
+            <div id="import-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>WebSocket Connection Test</h2>
+        <p>This test attempts to establish a WebSocket connection to a different origin, which may be restricted under Document Isolation Policy.</p>
+        <div class="violation-test">
+            <button id="websocket-btn">Connect WebSocket</button>
+            <div id="websocket-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Service Worker Registration Test</h2>
+        <p>This test attempts to register a service worker from a different origin, which should be blocked under Document Isolation Policy.</p>
+        <div class="violation-test">
+            <button id="service-worker-btn">Register Service Worker</button>
+            <div id="service-worker-result" class="result">Result will appear here</div>
+        </div>
+    </div>
+
+    <script>
+        // Display isolation status
+        function updateIsolationStatus() {
+            const statusDiv = document.getElementById('isolation-status');
+            statusDiv.innerHTML = `
+                <p><strong>crossOriginIsolated:</strong> ${window.crossOriginIsolated}</p>
+                <p><strong>Document URL:</strong> ${document.URL}</p>
+                <p><strong>Document Domain:</strong> ${document.domain}</p>
+                <p><strong>Origin:</strong> ${window.origin}</p>
+            `;
+            console.log('crossOriginIsolated:', window.crossOriginIsolated);
+        }
+        updateIsolationStatus();
+
+        // Test 1: Fetch cross-origin resource
+        document.getElementById('fetch-resource-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('fetch-result');
+            resultDiv.innerHTML = 'Attempting to fetch cross-origin resource...';
+            
+            // This should trigger a violation under Document Isolation Policy
+            fetch('https://api.github.com/users/octocat')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultDiv.innerHTML = `<p>Successfully fetched cross-origin data (may be allowed depending on CORS headers):</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<p>Error fetching cross-origin resource:</p><pre>${error.toString()}</pre>`;
+                    console.error('Fetch error:', error);
+                });
+        });
+
+        // Test 2.1: Load external script
+        document.getElementById('load-script-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('script-result');
+            resultDiv.innerHTML = 'Attempting to load external script...';
+            
+            try {
+                const script = document.createElement('script');
+                script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+                script.onload = function() {
+                    resultDiv.innerHTML = '<p>Successfully loaded external script (jQuery is now available)</p>';
+                    // Try to use jQuery to verify it loaded
+                    if (typeof jQuery !== 'undefined') {
+                        resultDiv.innerHTML += `<p>jQuery version: ${jQuery.fn.jquery}</p>`;
+                    }
+                };
+                script.onerror = function(error) {
+                    resultDiv.innerHTML = `<p>Error loading external script:</p><pre>Script load failed</pre>`;
+                };
+                document.head.appendChild(script);
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error creating script element:</p><pre>${error.toString()}</pre>`;
+                console.error('Script loading error:', error);
+            }
+        });
+
+        // Test 2.2: Iframe with document.write
+        document.getElementById('iframe-write-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('iframe-write-result');
+            const container = document.getElementById('iframe-container');
+            
+            try {
+                // Create iframe
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '150px';
+                iframe.style.border = '1px solid #ddd';
+                container.innerHTML = '';
+                container.appendChild(iframe);
+                
+                // Try to write to the iframe document
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Iframe Content</title>
+                        <script>
+                            // Try to access parent document
+                            try {
+                                const parentTitle = window.parent.document.title;
+                                document.write('<p>Successfully accessed parent document title: ' + parentTitle + '</p>');
+                            } catch(e) {
+                                document.write('<p>Error accessing parent: ' + e.toString() + '</p>');
+                            }
+                        </script>
+                    </head>
+                    <body>
+                        <h2>Iframe Content</h2>
+                        <p>This content was written using document.write</p>
+                    </body>
+                    </html>
+                `);
+                iframeDoc.close();
+                
+                resultDiv.innerHTML = '<p>Successfully created and wrote to iframe</p>';
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error with iframe document.write:</p><pre>${error.toString()}</pre>`;
+                console.error('Iframe write error:', error);
+            }
+        });
+
+        // Test 2.3: Dynamic import
+        document.getElementById('dynamic-import-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('import-result');
+            resultDiv.innerHTML = 'Attempting dynamic import...';
+            
+            try {
+                // Create a URL to an external module
+                const moduleUrl = 'https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/lodash.js';
+                
+                // Try to dynamically import it
+                import(moduleUrl)
+                    .then(module => {
+                        resultDiv.innerHTML = '<p>Successfully imported external module</p>';
+                        if (module && module.default) {
+                            resultDiv.innerHTML += `<p>Module loaded: ${typeof module.default}</p>`;
+                        }
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `<p>Error importing module:</p><pre>${error.toString()}</pre>`;
+                        console.error('Import error:', error);
+                    });
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error setting up dynamic import:</p><pre>${error.toString()}</pre>`;
+                console.error('Dynamic import setup error:', error);
+            }
+        });
+
+        // Test 3: WebSocket connection
+        document.getElementById('websocket-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('websocket-result');
+            resultDiv.innerHTML = 'Attempting to establish WebSocket connection...';
+            
+            try {
+                // Try to connect to a public WebSocket echo server
+                const socket = new WebSocket('wss://echo.websocket.org');
+                
+                socket.onopen = function() {
+                    resultDiv.innerHTML = '<p>WebSocket connection established successfully</p>';
+                    socket.send('Hello from Document Isolation Policy test!');
+                };
+                
+                socket.onmessage = function(event) {
+                    resultDiv.innerHTML += `<p>Received message: ${event.data}</p>`;
+                    socket.close();
+                };
+                
+                socket.onerror = function(error) {
+                    resultDiv.innerHTML = `<p>WebSocket error:</p><pre>Connection failed</pre>`;
+                    console.error('WebSocket error:', error);
+                };
+                
+                socket.onclose = function() {
+                    resultDiv.innerHTML += '<p>WebSocket connection closed</p>';
+                };
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error creating WebSocket:</p><pre>${error.toString()}</pre>`;
+                console.error('WebSocket creation error:', error);
+            }
+        });
+
+        // Test 4: Service Worker Registration
+        document.getElementById('service-worker-btn').addEventListener('click', function() {
+            const resultDiv = document.getElementById('service-worker-result');
+            resultDiv.innerHTML = 'Attempting to register service worker...';
+            
+            // Check if Service Worker API is available
+            if ('serviceWorker' in navigator) {
+                // Try to register a service worker from a different origin
+                navigator.serviceWorker.register('https://example.com/sw.js')
+                    .then(registration => {
+                        resultDiv.innerHTML = `<p>Service Worker registered successfully (this should not happen under Document Isolation Policy)</p>`;
+                        console.log('Service Worker registration successful:', registration);
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `<p>Service Worker registration failed (expected with Document Isolation Policy):</p><pre>${error.toString()}</pre>`;
+                        console.error('Service Worker registration failed:', error);
+                    });
+            } else {
+                resultDiv.innerHTML = '<p>Service Worker API is not available in this browser</p>';
+            }
+        });
+    </script>
+</body>
+</html>
